@@ -22,7 +22,7 @@ class SafetyPage(Page):
 
         prom = Card(spacing=4)
         prom.lay.addWidget(label(tr("safety.promises"), "H2"))
-        for i in range(1, 7):
+        for i in range(1, 8):
             prom.lay.addWidget(label("✓  " + tr(f"safety.p{i}")))
         self.body.addWidget(prom)
 

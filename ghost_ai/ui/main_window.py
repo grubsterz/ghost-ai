@@ -11,6 +11,7 @@ from PySide6.QtWidgets import (
 from .. import i18n
 from ..i18n import tr
 from .pages.about import AboutPage
+from .pages.agent import AgentPage
 from .pages.dashboard import DashboardPage
 from .pages.files import FilesPage
 from .pages.natural import NaturalPage
@@ -25,7 +26,7 @@ ASSETS = Path(__file__).resolve().parent.parent / "assets"
 
 NAV = [
     ("dashboard", "◈", DashboardPage), ("files", "▤", FilesPage), ("teach", "◉", TeachPage),
-    ("natural", "✦", NaturalPage), ("quick", "↯", QuickPage), ("safety", "⛨", SafetyPage),
+    ("natural", "✦", NaturalPage), ("agent", "⌘", AgentPage), ("quick", "↯", QuickPage), ("safety", "⛨", SafetyPage),
     ("settings", "⚙︎", SettingsPage), ("about", "ⓘ", AboutPage),
 ]
 

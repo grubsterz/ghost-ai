@@ -114,3 +114,46 @@ def test_rule_editor_rejects_empty_conditions(qapp, ctx, sandbox):
     ed._save()
     assert ctx.service.rules() == []
     assert ed.error.text()
+
+
+def test_agent_page_locked_then_runs_approved_command(qapp, ctx):
+    import sys
+    import time
+
+    from ghost_ai.ui.pages.agent import AgentPage
+
+    page = AgentPage(ctx)
+    page.show()
+    qapp.processEvents()
+    assert page.locked.isVisible() and not page.req_card.isVisible()
+    ctx.set_setting("full_access", True)
+    page.refresh()
+    assert not page.locked.isVisible() and page.req_card.isVisible()
+
+    page.input.setText("$ " + ("Write-Output ghost-ui-ok" if sys.platform == "win32" else "echo ghost-ui-ok"))
+    page.propose()
+    assert len(page.steps) == 1 and page.steps[0].status == "pending", "nothing runs before the click"
+    page.run_step(0)
+    deadline = time.time() + 30
+    while (page.running or page.steps[0].status in ("pending", "running")) and time.time() < deadline:
+        qapp.processEvents()
+        time.sleep(0.05)
+    assert page.steps[0].status == "done"
+    assert "ghost-ui-ok" in page.console.toPlainText()
+    assert ctx.store.commands()[0]["status"] == "done"
+    page.close()
+
+
+def test_agent_page_blocked_when_paused(qapp, ctx):
+    from ghost_ai.ui.pages.agent import AgentPage
+
+    ctx.set_setting("full_access", True)
+    ctx.service.set_paused(True)
+    page = AgentPage(ctx)
+    page.input.setText("$ Get-Date")
+    page.propose()
+    from unittest.mock import patch
+    with patch("ghost_ai.ui.pages.agent.QMessageBox.information"):
+        page.run_step(0)
+    assert page.steps[0].status == "pending"
+    ctx.service.set_paused(False)

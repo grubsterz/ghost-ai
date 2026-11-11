@@ -29,6 +29,10 @@ CREATE INDEX IF NOT EXISTS journal_batch ON journal(batch_id);
 CREATE TABLE IF NOT EXISTS quick_actions (id TEXT PRIMARY KEY, data TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS folders (path TEXT PRIMARY KEY, added TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS commands (
+    id INTEGER PRIMARY KEY AUTOINCREMENT, ts TEXT NOT NULL, command TEXT NOT NULL, status TEXT NOT NULL,
+    exit_code INTEGER, output TEXT NOT NULL DEFAULT '', request TEXT NOT NULL DEFAULT ''
+);
 """
 
 
@@ -150,6 +154,16 @@ class Store:
 
     def folders(self) -> list[str]:
         return [r["path"] for r in self._query("SELECT path FROM folders ORDER BY added")]
+
+    # ---- full-access command log ------------------------------------------
+    def add_command(self, command: str, status: str, exit_code: int | None, output: str, request: str = "") -> None:
+        self._exec("INSERT INTO commands (ts, command, status, exit_code, output, request) VALUES (?,?,?,?,?,?)",
+                   (datetime.now().isoformat(timespec="seconds"), command, status, exit_code, output[-20000:],
+                    request[:500]))
+
+    def commands(self, limit: int = 200) -> list[dict[str, Any]]:
+        rows = self._query("SELECT * FROM commands ORDER BY id DESC LIMIT ?", (limit,))
+        return [dict(r) for r in rows]
 
     # ---- settings ---------------------------------------------------------
     def get(self, key: str, default: Any = None) -> Any:

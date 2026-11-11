@@ -23,7 +23,7 @@ more freely worded requests.
 | **Privacy** | Runs 100 % locally. No cloud, no telemetry code at all, no account. |
 | **Safety** | Works only in folders you allow. Never deletes, never overwrites. Unwanted files go to a recoverable quarantine. |
 | **You stay in control** | Every rule gets a dry-run preview first. One click undoes a whole run. |
-| **AI that can't run code** | The model only fills in a strictly validated JSON form with 4 allowed action types. Its output is treated as untrusted and can never become a shell command. |
+| **AI never acts alone** | File rules come from a strictly validated JSON form (4 action types). In the opt-in full-access mode, model output becomes visible, editable commands that run only after your click. Nothing executes silently. |
 | **Beginner-friendly** | Templates, Teach-by-example, plain-language requests, HR/EN interface, light/dark theme, text scaling. |
 
 ## Features
@@ -39,6 +39,12 @@ more freely worded requests.
   A built-in parser handles simple sentences with no model at all; with Ollama enabled, a local model handles the rest.
 - **Voice** (optional): click the mic, speak Croatian or English, and the speech is transcribed locally with
   faster-whisper. The mic is only on while the red indicator shows.
+- **Do anything (full access, opt-in)**: *"instaliraj 7zip"*, *"update all apps"*, *"clone grubsterz/ghost-ai"*,
+  *"my repos"*, or `$ any command`. GHOST proposes the commands (winget/brew, git, the GitHub CLI with your own
+  login, anything your shell can do). You see every command, can edit it, and it runs **only when you click Run**.
+  Output streams live; with a local model GHOST reads the output and proposes the next step. Dangerous commands
+  (recursive delete, disk format, piping downloads into a shell, force-push, touching keys…) need a typed
+  confirmation. Off by default; every command is logged.
 - **Quick Actions**: one click runs several rules on files already there, then opens a folder.
 - **Safety Center**: pause everything, approve queued actions, manage allowed folders, browse the full
   action log, undo single actions, inspect quarantine.
@@ -48,7 +54,7 @@ more freely worded requests.
 <img src="docs/screenshots/dark-en-teach.png" width="49%" alt="Teach Mode">
 <img src="docs/screenshots/dark-en-natural.png" width="49%" alt="Natural language">
 <img src="docs/screenshots/dark-en-files.png" width="49%" alt="Smart Files">
-<img src="docs/screenshots/light-en-dashboard.png" width="49%" alt="Light theme">
+<img src="docs/screenshots/dark-en-agent.png" width="49%" alt="Do anything - full access">
 </p>
 
 ## Install
@@ -109,9 +115,10 @@ ghost_ai/
   storage/     SQLite: rules, action log, quick actions, folders, settings
   teach/       demonstration recorder + rule generalizer
   ai/          keyword parser (HR/EN) + optional Ollama provider (structured output, validated)
+  agent/       full-access mode: built-in command recipes, Ollama command planner, risk checks, command runner
   voice/       optional faster-whisper speech-to-text
   ui/          PySide6 desktop UI (pages, theme, dialogs)
-tests/         61 pytest tests: engine on temp folders, validation, guard, teach, AI parsing, UI smoke tests
+tests/         93 pytest tests: engine on temp folders, validation, guard, teach, AI parsing, UI smoke tests
 ```
 The engine never touches the disk directly. It goes through a `FileSystem` adapter (real or in-memory)
 and through `PathGuard`, so every action is testable without touching real user files.
@@ -122,7 +129,7 @@ Data lives in `%LOCALAPPDATA%\GHOST AI` (Windows) or `~/Library/Application Supp
 ## Development
 ```bash
 pip install -e ".[dev]"
-pytest                                        # 61 tests, ~8 s
+pytest                                        # 93 tests, ~10 s
 python tools/demo_screenshots.py              # regenerate screenshots on a throw-away demo folder
 powershell -File packaging/build_windows.ps1  # tests → icons → PyInstaller → zip
 ```
@@ -138,10 +145,14 @@ powershell -File packaging/build_windows.ps1  # tests → icons → PyInstaller 
 - Voice needs the optional `[voice]` extra; the first transcription downloads the Whisper model (~460 MB for `small`).
 - Undo of a move fails safely if the moved file was changed or removed in the meantime.
 - Rules run sequentially per file; the first matching watch rule wins.
+- Full access: without a local model only the built-in tasks are understood (install/uninstall, update all, repos,
+  clone, create repo, disk space, `$ command`). Commands run non-interactively; things that need a prompt
+  (e.g. `gh auth login`) open in a separate terminal. The risk check is a warning system, not a sandbox.
 
 ## Privacy
-GHOST AI contains no telemetry, analytics or update pings. The only network call it can make is to your
-**local** Ollama server (`127.0.0.1`), and only if you enable it. Remote URLs are refused.
+GHOST AI contains no telemetry, analytics or update pings. GHOST itself only talks to your **local** Ollama
+server (`127.0.0.1`), and only if you enable it; remote model URLs are refused. Commands you approve in full-access
+mode (e.g. `winget install`, `gh repo list`) of course use the network the way those tools normally do.
 
 ## License
 MIT. See [LICENSE](LICENSE).

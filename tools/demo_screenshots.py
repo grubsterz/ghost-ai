@@ -80,6 +80,19 @@ def main() -> None:
                                     else "Move all PDFs from Downloads to Documents")
             from ghost_ai.ai.natural import propose_rule
             page._show(propose_rule(page.input.toPlainText(), ctx.known_folders(), None))
+        if key == "agent":
+            from ghost_ai.agent.planner import builtin_plan
+            ctx.set_setting("full_access", True)
+            page = win.pages[key]
+            page.refresh()
+            page.input.setText("instaliraj 7zip" if args.lang == "hr" else "install 7zip")
+            page._show_plan(builtin_plan(page.input.text(), is_windows=True))
+            page.steps[0].status, page.steps[0].exit_code = "done", 0
+            page.console.setPlainText('$ winget search "7zip" --accept-source-agreements\n'
+                                      "Name    Id         Version  Match\n"
+                                      "-----------------------------------------\n"
+                                      "7-Zip   7zip.7zip  26.06    Moniker: 7zip\n")
+            page._render()
         if key == "teach":
             from ghost_ai.teach.generalizer import DemoStep
             page = win.pages[key]

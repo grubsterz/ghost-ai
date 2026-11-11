@@ -42,7 +42,7 @@ if sys.platform == "darwin":
         icon=ICON_MAC if Path(ICON_MAC).exists() else None,
         bundle_identifier="com.grubsterz.ghostai",
         info_plist={
-            "CFBundleShortVersionString": "0.1.0",
+            "CFBundleShortVersionString": "0.2.0",
             "NSHighResolutionCapable": True,
             "LSMinimumSystemVersion": "12.0",
             # Shown by macOS only if the optional voice feature is used.

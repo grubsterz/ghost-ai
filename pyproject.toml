@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ghost-ai"
-version = "0.1.0"
+version = "0.2.0"
 description = "Free, private, offline-first desktop assistant that automates file chores you describe or demonstrate."
 readme = "README.md"
 requires-python = ">=3.12"

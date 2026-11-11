@@ -76,6 +76,17 @@ class SettingsPage(Page):
         ai.lay.addWidget(label(tr("set.ai_help"), "Muted"))
         self.body.addWidget(ai)
 
+        full = Card()
+        full.lay.addWidget(label(tr("set.full_access"), "H2"))
+        self.full_label = label("", "Muted")
+        full.lay.addWidget(self.full_label)
+        frow = QHBoxLayout()
+        self.full_btn = button("", slot=self._toggle_full)
+        frow.addWidget(self.full_btn)
+        frow.addStretch(1)
+        full.lay.addLayout(frow)
+        self.body.addWidget(full)
+
         voice = Card()
         voice.lay.addWidget(label(tr("set.voice"), "H2"))
         vrow = QHBoxLayout()
@@ -115,6 +126,24 @@ class SettingsPage(Page):
         self.finish()
         self._sig = _Sig()
         self._sig.done.connect(self._tested)
+        self.refresh()
+
+    def refresh(self) -> None:
+        on = bool(self.ctx.setting("full_access", False))
+        self.full_label.setText(tr("set.full_on") if on else tr("set.full_off"))
+        self.full_btn.setText(tr("agent.disable") if on else tr("agent.enable"))
+        self.full_btn.setObjectName("" if on else "Primary")
+        self.full_btn.style().unpolish(self.full_btn)
+        self.full_btn.style().polish(self.full_btn)
+
+    def _toggle_full(self) -> None:
+        on = bool(self.ctx.setting("full_access", False))
+        if not on and QMessageBox.warning(self, tr("agent.enable"), tr("agent.enable_q"),
+                                          QMessageBox.Yes | QMessageBox.No, QMessageBox.No) != QMessageBox.Yes:
+            return
+        self.ctx.set_setting("full_access", not on)
+        self.refresh()
+        self.ctx.bus.changed.emit()
 
     def _lang(self) -> None:
         self.ctx.set_setting("language", self.lang.currentData())
