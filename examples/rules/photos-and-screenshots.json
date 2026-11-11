@@ -1,0 +1,20 @@
+{
+  "app": "GHOST AI",
+  "version": 1,
+  "rules": [
+    {
+      "name": "Screenshots → Pictures/Screenshots",
+      "watch_dir": "~/Desktop",
+      "conditions": {"extensions": ["png", "jpg"], "name_contains": ["screenshot", "snimka zaslona"], "name_glob": ""},
+      "action": {"type": "move", "target_dir": "~/Pictures/Screenshots", "rename_template": "{stem}{ext}"}
+    },
+    {
+      "name": "Camera photos: date prefix, lowercase, no spaces",
+      "watch_dir": "~/Pictures",
+      "conditions": {"extensions": ["jpg", "jpeg", "heic"], "name_contains": [], "name_glob": "img*"},
+      "action": {"type": "rename", "target_dir": "", "rename_template": "{date}_{stem}{ext}",
+                 "case": "lower", "spaces": "underscore"},
+      "trigger": "manual"
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "app": "GHOST AI",
+  "version": 1,
+  "rules": [
+    {
+      "name": "Invoices → Documents/Invoices",
+      "watch_dir": "~/Downloads",
+      "conditions": {"extensions": ["pdf"], "name_contains": ["invoice", "racun", "račun"], "name_glob": ""},
+      "action": {"type": "move", "target_dir": "~/Documents/Invoices", "rename_template": "{date} {stem}{ext}"}
+    },
+    {
+      "name": "Images → Pictures",
+      "watch_dir": "~/Downloads",
+      "conditions": {"extensions": ["jpg", "jpeg", "png", "gif", "webp", "heic"], "name_contains": [], "name_glob": ""},
+      "action": {"type": "move", "target_dir": "~/Pictures", "rename_template": "{stem}{ext}"}
+    },
+    {
+      "name": "Archives → Documents/Archives",
+      "watch_dir": "~/Downloads",
+      "conditions": {"extensions": ["zip", "rar", "7z"], "name_contains": [], "name_glob": ""},
+      "action": {"type": "move", "target_dir": "~/Documents/Archives", "rename_template": "{stem}{ext}"}
+    },
+    {
+      "name": "Old installers → quarantine (asks first)",
+      "watch_dir": "~/Downloads",
+      "conditions": {"extensions": ["exe", "msi", "dmg", "pkg"], "name_contains": [], "name_glob": ""},
+      "action": {"type": "trash", "target_dir": "", "rename_template": "{stem}{ext}"},
+      "confirm_each": true
+    }
+  ]
+}

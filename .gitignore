@@ -1,0 +1,8 @@
+.venv/
+.pytest-tmp/
+__pycache__/
+*.pyc
+build/
+dist/
+*.spec.bak
+.demo/

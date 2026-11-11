@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ghost-ai"
+version = "0.1.0"
+description = "Free, private, offline-first desktop assistant that automates file chores you describe or demonstrate."
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "MIT" }
+authors = [{ name = "Fran Grubišić" }]
+dependencies = [
+    "PySide6>=6.7",
+    "watchdog>=4.0",
+]
+
+[project.optional-dependencies]
+voice = ["faster-whisper>=1.0", "sounddevice>=0.4", "numpy>=1.26"]
+dev = ["pytest>=8", "pyinstaller>=6.6"]
+
+[project.scripts]
+ghost-ai = "ghost_ai.app:main"
+
+[tool.setuptools.packages.find]
+include = ["ghost_ai*"]
+
+[tool.setuptools.package-data]
+ghost_ai = ["assets/*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q --basetemp=.pytest-tmp -p no:cacheprovider"
