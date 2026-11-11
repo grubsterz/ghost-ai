@@ -39,8 +39,10 @@ more freely worded requests.
   A built-in parser handles simple sentences with no model at all; with Ollama enabled, a local model handles the rest.
 - **Voice** (optional): click the mic, speak Croatian or English, and the speech is transcribed locally with
   faster-whisper. The mic is only on while the red indicator shows.
-- **Do anything (full access, opt-in)**: *"instaliraj 7zip"*, *"update all apps"*, *"clone grubsterz/ghost-ai"*,
-  *"my repos"*, or `$ any command`. GHOST proposes the commands (winget/brew, git, the GitHub CLI with your own
+- **Do anything (full access, opt-in)**: *"otvori youtube.com u chromeu"*, *"pusti lofi na youtubeu"*,
+  *"otvori kalkulator"* / *"zatvori chrome"*, *"pokreni igru counter-strike"* (installed Steam games), *"otvori terminal"*,
+  *"otvori mapu preuzimanja"*, *"zaključaj računalo"*, *"instaliraj 7zip"*, *"update all apps"*,
+  *"clone grubsterz/ghost-ai"*, *"my repos"*, or `$ any command`. GHOST proposes the commands (winget/brew, git, the GitHub CLI with your own
   login, anything your shell can do). You see every command, can edit it, and it runs **only when you click Run**.
   Output streams live; with a local model GHOST reads the output and proposes the next step. Dangerous commands
   (recursive delete, disk format, piping downloads into a shell, force-push, touching keys…) need a typed
@@ -118,7 +120,7 @@ ghost_ai/
   agent/       full-access mode: built-in command recipes, Ollama command planner, risk checks, command runner
   voice/       optional faster-whisper speech-to-text
   ui/          PySide6 desktop UI (pages, theme, dialogs)
-tests/         93 pytest tests: engine on temp folders, validation, guard, teach, AI parsing, UI smoke tests
+tests/         120 pytest tests: engine on temp folders, validation, guard, teach, AI parsing, UI smoke tests
 ```
 The engine never touches the disk directly. It goes through a `FileSystem` adapter (real or in-memory)
 and through `PathGuard`, so every action is testable without touching real user files.
@@ -129,7 +131,7 @@ Data lives in `%LOCALAPPDATA%\GHOST AI` (Windows) or `~/Library/Application Supp
 ## Development
 ```bash
 pip install -e ".[dev]"
-pytest                                        # 93 tests, ~10 s
+pytest                                        # 120 tests, ~13 s
 python tools/demo_screenshots.py              # regenerate screenshots on a throw-away demo folder
 powershell -File packaging/build_windows.ps1  # tests → icons → PyInstaller → zip
 ```
@@ -145,8 +147,9 @@ powershell -File packaging/build_windows.ps1  # tests → icons → PyInstaller 
 - Voice needs the optional `[voice]` extra; the first transcription downloads the Whisper model (~460 MB for `small`).
 - Undo of a move fails safely if the moved file was changed or removed in the meantime.
 - Rules run sequentially per file; the first matching watch rule wins.
-- Full access: without a local model only the built-in tasks are understood (install/uninstall, update all, repos,
-  clone, create repo, disk space, `$ command`). Commands run non-interactively; things that need a prompt
+- Full access: without a local model only the built-in tasks are understood (open link/app/folder/terminal, close
+  app, launch Steam game, Google/YouTube search, lock/shut down, install/uninstall, update all, repos, clone,
+  create repo, disk space, `$ command`). "Close" asks the app to close normally; it never force-kills on its own. Commands run non-interactively; things that need a prompt
   (e.g. `gh auth login`) open in a separate terminal. The risk check is a warning system, not a sandbox.
 
 ## Privacy

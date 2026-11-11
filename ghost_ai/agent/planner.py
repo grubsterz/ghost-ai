@@ -18,6 +18,7 @@ from ..ai.natural import Transport, _fold, extract_json, http_json, is_local_url
 from ..domain.validation import ValidationError
 from ..i18n import tr
 from .commands import MAX_COMMAND, CommandStep, shell_name
+from .desktop import desktop_plan
 
 MAX_STEPS = 8
 _SAFE_NAME = re.compile(r"^[\w .+\-/]{1,80}$")
@@ -50,6 +51,8 @@ def builtin_plan(text: str, is_windows: bool | None = None) -> AgentPlan | None:
         return AgentPlan("", [CommandStep(cmd, tr("agentx.own"))], "builtin") if cmd else None
     t = _fold(raw)
     docs = standard_folders().get("documents", os.path.expanduser("~"))
+    if re.search(r"\b(github login|prijavi (me )?(se )?na github|log ?in to github)\b", t):
+        return AgentPlan("github_login", [], "builtin")
 
     m = re.match(r"^(?:molim te\s+|please\s+)?(?:deinstaliraj|uninstall|makni program|ukloni program|remove app)\s+(.+)$",
                  t)
@@ -76,6 +79,10 @@ def builtin_plan(text: str, is_windows: bool | None = None) -> AgentPlan | None:
                else "brew update && brew upgrade")
         return AgentPlan("", [CommandStep("winget upgrade" if win else "brew outdated", tr("agentx.list_updates")),
                               CommandStep(cmd, tr("agentx.update_all"))], "builtin")
+
+    desk = desktop_plan(raw, t, win)
+    if desk:
+        return AgentPlan("", desk, "builtin")
 
     m = re.match(r"^(?:kloniraj|clone)\s+(?:repo\s+|repozitorij\s+|repository\s+)?([\w.\-]+(?:/[\w.\-]+)?)", t)
     if m:
@@ -113,6 +120,10 @@ Rules:
   and the GitHub CLI `gh` (already logged in if available) for GitHub.
 - Use as few steps as possible (max {max_steps}). Use non-interactive flags (e.g. --accept-package-agreements).
 - Never read or print passwords, tokens, keys, cookies or browser data. Never disable security features.
+- You can open links (Start-Process '<url>' / Start-Process chrome '<url>' on Windows, open / open -a "Google Chrome"
+  on macOS), start apps, open a terminal, start installed Steam games (steam://rungameid/<appid>), close apps
+  gracefully (CloseMainWindow / osascript quit) and manage files. Commands run without a console window, so start
+  GUI programs with Start-Process (Windows) or open (macOS) so they appear on the user's screen.
 - If the request needs nothing to run, return an empty "steps" list and answer in "reply".
 - When you receive command output, decide the next steps or finish with an empty "steps" list."""
 

@@ -211,9 +211,9 @@ T: dict[str, tuple[str, str]] = {
     "col.to": ("To", "Kamo"), "col.status": ("Status", "Stanje"), "col.rule": ("Rule", "Pravilo"),
     # agent / full access
     "agent.title": ("Do anything", "Napravi bilo što"),
-    "agent.sub": ("Install apps, work with GitHub, run any command. GHOST proposes the commands - you see each one, "
+    "agent.sub": ("Open links and apps, start games, close programs, install apps, work with GitHub, run any command. GHOST proposes the commands - you see each one, "
                   "can edit it, and it runs only when you click Run.",
-                  "Instaliraj programe, radi s GitHubom, pokreni bilo koju naredbu. GHOST predloži naredbe - svaku vidiš, "
+                  "Otvaraj linkove i programe, pokreći igre, zatvaraj programe, instaliraj, radi s GitHubom, pokreni bilo koju naredbu. GHOST predloži naredbe - svaku vidiš, "
                   "možeš je urediti i pokreće se tek kad klikneš Pokreni."),
     "agent.locked": ("Full access is off", "Puni pristup je isključen"),
     "agent.locked_text": ("With full access GHOST can run commands on this computer with your user's rights: install and "
@@ -237,10 +237,13 @@ T: dict[str, tuple[str, str]] = {
     "agent.mode_ai": ("Local AI: {model} + built-in commands", "Lokalni AI: {model} + ugrađene naredbe"),
     "agent.mode_builtin": ("Built-in commands only (enable local AI in Settings for anything else)",
                            "Samo ugrađene naredbe (za sve ostalo uključi lokalni AI u Postavkama)"),
-    "agent.need_ai": ("Without a model I know these tasks: install / uninstall <app>, update all, my repos, "
-                      "clone <repo>, create repo <name>, disk space, or '$ command'. Enable local AI in Settings for "
+    "agent.need_ai": ("Without a model I know these tasks: open <link/app/folder/terminal>, close <app>, "
+                      "launch game <name>, google/youtube <text>, lock/shut down computer, install / uninstall <app>, "
+                      "update all, my repos, clone <repo>, create repo <name>, disk space, or '$ command'. Enable local AI in Settings for "
                       "anything else.",
-                      "Bez modela znam ove zadatke: instaliraj / deinstaliraj <program>, ažuriraj sve, moji repoi, "
+                      "Bez modela znam ove zadatke: otvori <link/program/mapu/terminal>, zatvori <program>, "
+                      "pokreni igru <ime>, pretraži/youtube <tekst>, zaključaj/ugasi računalo, "
+                      "instaliraj / deinstaliraj <program>, ažuriraj sve, moji repoi, "
                       "kloniraj <repo>, napravi repo <ime>, koliko ima mjesta, ili '$ naredba'. Za sve ostalo uključi "
                       "lokalni AI u Postavkama."),
     "agent.review": ("Check the commands below. Nothing has run yet.", "Provjeri naredbe ispod. Još se ništa nije pokrenulo."),
@@ -289,6 +292,19 @@ T: dict[str, tuple[str, str]] = {
     "agentx.repos": ("List your GitHub repositories", "Popis tvojih GitHub repozitorija"),
     "agentx.create_repo": ("Create GitHub repository {name}", "Napravi GitHub repozitorij {name}"),
     "agentx.disk": ("Show free disk space", "Pokaži slobodno mjesto na disku"),
+    "risk.closes_apps": ("closes programs", "zatvara programe"),
+    "desk.shutdown": ("Shut down in 60 s (cancel: “otkaži gašenje”)", "Ugasi računalo za 60 s (poništi: „otkaži gašenje”)"),
+    "desk.restart": ("Restart in 60 s (cancel: “otkaži gašenje”)", "Restartaj računalo za 60 s (poništi: „otkaži gašenje”)"),
+    "desk.lock": ("Lock the screen", "Zaključaj ekran"),
+    "desk.cancel_shutdown": ("Cancel a scheduled shutdown/restart", "Otkaži zakazano gašenje/restart"),
+    "desk.youtube": ("Search YouTube for “{q}”", "Traži na YouTubeu: „{q}”"),
+    "desk.google": ("Search Google for “{q}”", "Traži na Googleu: „{q}”"),
+    "desk.open_url": ("Open {url}", "Otvori {url}"),
+    "desk.terminal": ("Open a terminal", "Otvori terminal"),
+    "desk.open_folder": ("Open folder {folder}", "Otvori mapu {folder}"),
+    "desk.game": ("Start the Steam game “{name}”", "Pokreni Steam igru „{name}”"),
+    "desk.close": ("Close {name} (asks it to close normally)", "Zatvori {name} (normalno, kao klik na X)"),
+    "desk.open_app": ("Open {name}", "Otvori {name}"),
     "set.full_access": ("Full access (commands)", "Puni pristup (naredbe)"),
     "set.full_on": ("On - commands run only after your click.", "Uključen - naredbe se pokreću tek na tvoj klik."),
     "set.full_off": ("Off - GHOST only organizes files in allowed folders.",

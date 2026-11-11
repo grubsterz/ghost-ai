@@ -17,10 +17,12 @@ from ...i18n import language, tr
 from ..widgets import Card, Page, button, clear_layout, label, pill
 
 EXAMPLES = {
-    "hr": ["instaliraj 7zip", "instaliraj VLC", "ažuriraj sve programe", "moji repoi", "kloniraj grubsterz/ghost-ai",
-           "koliko ima mjesta na disku", "$ Get-Date"],
-    "en": ["install 7zip", "install VLC", "update all apps", "my repos", "clone grubsterz/ghost-ai",
-           "how much free disk space", "$ Get-Date"],
+    "hr": ["otvori youtube.com u chromeu", "pusti lofi na youtubeu", "otvori kalkulator", "zatvori kalkulator",
+           "pokreni igru counter-strike", "otvori terminal", "otvori mapu preuzimanja", "instaliraj 7zip",
+           "ažuriraj sve programe", "moji repoi", "kloniraj grubsterz/ghost-ai", "$ Get-Date"],
+    "en": ["open youtube.com in chrome", "play lofi on youtube", "open calculator", "close calculator",
+           "launch game counter-strike", "open terminal", "open folder downloads", "install 7zip",
+           "update all apps", "my repos", "clone grubsterz/ghost-ai", "$ Get-Date"],
 }
 
 

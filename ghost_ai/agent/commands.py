@@ -16,6 +16,7 @@ from dataclasses import dataclass, field
 from typing import Callable
 
 MAX_COMMAND = 4000
+_ANSI = re.compile(r"\x1b\[[0-9;?]*[A-Za-z]")
 
 
 @dataclass
@@ -45,6 +46,8 @@ _RISKS: list[tuple[str, str, str]] = [
     (r"(iex|invoke-expression)\b|\|\s*(sh|bash|zsh|iex|pwsh|powershell)\b", "high", "remote_script"),
     (r"\b(shutdown|restart-computer|stop-computer|reboot|halt)\b", "medium", "power"),
     (r"\b(sudo|runas|start-process\b.*-verb\s+runas)\b", "medium", "elevation"),
+    (r"(closemainwindow|stop-process|taskkill|quit app|killall)", "medium", "closes_apps"),
+    (r"lockworkstation", "medium", "power"),
     (r"\b(set-executionpolicy|netsh\s+advfirewall|set-mppreference|ufw\s+disable|spctl\s+--master-disable)",
      "high", "security_setting"),
     (r"\b(git\s+push\b.*(--force|-f\b)|gh\s+repo\s+delete)", "high", "github_destructive"),
@@ -79,7 +82,7 @@ def shell_argv(command: str) -> list[str]:
     if sys.platform == "win32":
         exe = shutil.which("pwsh") or "powershell"
         return [exe, "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command",
-                "[Console]::OutputEncoding=[Text.Encoding]::UTF8; " + command]
+                "[Console]::OutputEncoding=[Text.Encoding]::UTF8; if ($PSStyle) { $PSStyle.OutputRendering = 'PlainText' }; " + command]
     sh = os.environ.get("SHELL", "/bin/zsh")
     if not os.path.exists(sh):
         sh = "/bin/sh"
@@ -124,7 +127,7 @@ class CommandRunner:
         threading.Thread(target=kill_on_timeout, daemon=True).start()
         assert self._proc.stdout is not None
         for raw in iter(self._proc.stdout.readline, b""):
-            line = raw.decode("utf-8", errors="replace")
+            line = _ANSI.sub("", raw.decode("utf-8", errors="replace"))
             if len(chunks) < 5000:
                 chunks.append(line)
             if on_output:
