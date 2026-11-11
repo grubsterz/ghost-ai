@@ -137,7 +137,7 @@ class DashboardPage(Page):
         QThreadPool.globalInstance().start(_ProbeTask(provider, self._probe))
 
     def _ai_result(self, ok: bool, models: list, disabled: bool = False) -> None:
-        model = self.ctx.setting("ai_model", "llama3.2:3b")
+        model = self.ctx.ai_label()
         if ok and any(m == model or m.split(":")[0] == model for m in models):
             self.ai_pill.setText(tr("status.ai_ready", model=model))
             self.ai_pill.setObjectName("PillOk")

@@ -12,9 +12,9 @@ invoices, renaming photos, parking old installers. You **describe** the task in 
 English, or **show** it once with a few files. GHOST suggests a rule and shows exactly what will
 change, and nothing moves until you approve it. Every action can be undone.
 
-It doesn't need the internet, an account or a GPU. Everything below works without any AI model
-installed. A local [Ollama](https://ollama.com) model is an optional extra that understands
-more freely worded requests.
+It doesn't need an account, a GPU or any other program. The AI runs **inside the app** (llama.cpp):
+one click downloads the model file once, and from then on everything works offline on your computer.
+All file rules, Teach Mode and the built-in commands also work without any model.
 
 ## Why it's different
 
@@ -44,7 +44,11 @@ more freely worded requests.
   *"otvori mapu preuzimanja"*, *"zaključaj računalo"*, *"instaliraj 7zip"*, *"update all apps"*,
   *"clone grubsterz/ghost-ai"*, *"my repos"*, or `$ any command`. GHOST proposes the commands (winget/brew, git, the GitHub CLI with your own
   login, anything your shell can do). You see every command, can edit it, and it runs **only when you click Run**.
-  Output streams live; with a local model GHOST reads the output and proposes the next step. Dangerous commands
+  Output streams live; with a local model GHOST reads the output and proposes the next step.
+  **Ask for literally anything**: one click on *Set up local AI (free)* downloads the built-in model.
+  GHOST recommends one for your RAM: Qwen2.5 7B (4.7 GB, best), 3B (2.1 GB) or 1.5B (1.1 GB). Nothing else to install.
+  Tick **Finish the task on its own** and GHOST keeps going step by step: commands with no risk flag run
+  automatically, and anything flagged (installs, closing apps, network, deleting…) still waits for your click. Dangerous commands
   (recursive delete, disk format, piping downloads into a shell, force-push, touching keys…) need a typed
   confirmation. Off by default; every command is logged.
 - **Quick Actions**: one click runs several rules on files already there, then opens a folder.
@@ -80,10 +84,11 @@ python -m ghost_ai
 
 Optional extras:
 ```bash
+pip install -e ".[ai]" --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cpu   # built-in AI (macOS: /whl/metal)
 pip install -e ".[voice]"        # local speech-to-text (faster-whisper + sounddevice)
-ollama pull llama3.2:3b          # then Settings → Local AI → enable
 ```
-Any Ollama model works; tested with `gemma3:12b`. Small models (`llama3.2:3b`, `qwen2.5:3b`) run on CPU.
+Advanced: instead of the built-in engine you can point GHOST at your own [Ollama](https://ollama.com)
+(Settings → AI engine → Ollama).
 
 ## 60-second demo
 1. First launch → pick *"Images from Downloads → Pictures"* → **Create and preview**.
@@ -116,11 +121,11 @@ ghost_ai/
   engine/      planner (dry-run), executor (journal, undo, quarantine), download stability, watcher, quick actions
   storage/     SQLite: rules, action log, quick actions, folders, settings
   teach/       demonstration recorder + rule generalizer
-  ai/          keyword parser (HR/EN) + optional Ollama provider (structured output, validated)
+  ai/          keyword parser (HR/EN), built-in llama.cpp engine + model download, optional Ollama (validated JSON)
   agent/       full-access mode: built-in command recipes, Ollama command planner, risk checks, command runner
   voice/       optional faster-whisper speech-to-text
   ui/          PySide6 desktop UI (pages, theme, dialogs)
-tests/         120 pytest tests: engine on temp folders, validation, guard, teach, AI parsing, UI smoke tests
+tests/         127 pytest tests: engine on temp folders, validation, guard, teach, AI parsing, UI smoke tests
 ```
 The engine never touches the disk directly. It goes through a `FileSystem` adapter (real or in-memory)
 and through `PathGuard`, so every action is testable without touching real user files.
@@ -131,7 +136,7 @@ Data lives in `%LOCALAPPDATA%\GHOST AI` (Windows) or `~/Library/Application Supp
 ## Development
 ```bash
 pip install -e ".[dev]"
-pytest                                        # 120 tests, ~13 s
+pytest                                        # 127 tests, ~30 s
 python tools/demo_screenshots.py              # regenerate screenshots on a throw-away demo folder
 powershell -File packaging/build_windows.ps1  # tests → icons → PyInstaller → zip
 ```
@@ -147,14 +152,18 @@ powershell -File packaging/build_windows.ps1  # tests → icons → PyInstaller 
 - Voice needs the optional `[voice]` extra; the first transcription downloads the Whisper model (~460 MB for `small`).
 - Undo of a move fails safely if the moved file was changed or removed in the meantime.
 - Rules run sequentially per file; the first matching watch rule wins.
+- The built-in AI runs on the CPU. The 7B model needs ~6 GB free RAM and takes roughly 10-60 s per answer
+  depending on the computer (GPU acceleration is not included yet); the 3B/1.5B models are faster but much less
+  reliable for "do anything".
 - Full access: without a local model only the built-in tasks are understood (open link/app/folder/terminal, close
   app, launch Steam game, Google/YouTube search, lock/shut down, install/uninstall, update all, repos, clone,
   create repo, disk space, `$ command`). "Close" asks the app to close normally; it never force-kills on its own. Commands run non-interactively; things that need a prompt
   (e.g. `gh auth login`) open in a separate terminal. The risk check is a warning system, not a sandbox.
 
 ## Privacy
-GHOST AI contains no telemetry, analytics or update pings. GHOST itself only talks to your **local** Ollama
-server (`127.0.0.1`), and only if you enable it; remote model URLs are refused. Commands you approve in full-access
+GHOST AI contains no telemetry, analytics or update pings. The AI runs inside the app. The only download it
+ever makes on its own is the model file you choose (from huggingface.co, on your click). Optional Ollama
+must be local (`127.0.0.1`); remote model URLs are refused. Commands you approve in full-access
 mode (e.g. `winget install`, `gh repo list`) of course use the network the way those tools normally do.
 
 ## License

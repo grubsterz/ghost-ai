@@ -8,6 +8,7 @@ cd "$(dirname "$0")/.."
 python3 -m venv .venv
 .venv/bin/python -m pip install --upgrade pip >/dev/null
 .venv/bin/python -m pip install -e ".[dev]"
+.venv/bin/python -m pip install "llama-cpp-python>=0.3.16" --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/metal
 .venv/bin/python -m pytest
 
 QT_QPA_PLATFORM=offscreen .venv/bin/python tools/make_icons.py

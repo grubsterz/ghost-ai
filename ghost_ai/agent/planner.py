@@ -30,6 +30,36 @@ class AgentPlan:
     steps: list[CommandStep]
     provider: str
     error: str = ""
+    on_success: dict[str, Any] | None = None  # settings to apply when every step finished OK
+
+
+DEFAULT_AI_MODEL = "qwen2.5:7b"  # good at following command/JSON instructions, ~4.7 GB, runs on CPU
+SMALL_AI_MODEL = "llama3.2:3b"  # ~2 GB, for weaker computers
+
+
+def setup_ai_plan(win: bool, model: str = DEFAULT_AI_MODEL) -> AgentPlan:
+    """Install Ollama + pull a model. Every step still needs the user's click."""
+    if win:
+        exe = '"$env:LOCALAPPDATA\\Programs\\Ollama\\ollama.exe"'
+        steps = [
+            CommandStep("if (Test-Path " + exe + ") { 'Ollama is already installed' } else { winget install --id "
+                        "Ollama.Ollama -e --accept-package-agreements --accept-source-agreements }",
+                        tr("agentx.ai_install")),
+            CommandStep("try { Invoke-RestMethod http://127.0.0.1:11434/api/tags -TimeoutSec 3 | Out-Null; "
+                        "'Ollama is running' } catch { Start-Process " + exe + " -ArgumentList 'serve' -WindowStyle "
+                        "Hidden; Start-Sleep 6; 'Ollama started' }", tr("agentx.ai_start")),
+            CommandStep("& " + exe + " pull " + model, tr("agentx.ai_pull", model=model)),
+        ]
+    else:
+        steps = [
+            CommandStep("command -v ollama >/dev/null && echo 'Ollama is already installed' || brew install ollama",
+                        tr("agentx.ai_install")),
+            CommandStep("curl -s http://127.0.0.1:11434/api/tags >/dev/null && echo 'Ollama is running' || "
+                        "(brew services start ollama && sleep 6 && echo 'Ollama started')", tr("agentx.ai_start")),
+            CommandStep(f"ollama pull {model}", tr("agentx.ai_pull", model=model)),
+        ]
+    return AgentPlan(tr("agentx.ai_reply", model=model), steps, "builtin",
+                     on_success={"ai_enabled": True, "ai_model": model})
 
 
 def _q(s: str) -> str:
@@ -53,6 +83,10 @@ def builtin_plan(text: str, is_windows: bool | None = None) -> AgentPlan | None:
     docs = standard_folders().get("documents", os.path.expanduser("~"))
     if re.search(r"\b(github login|prijavi (me )?(se )?na github|log ?in to github)\b", t):
         return AgentPlan("github_login", [], "builtin")
+
+    if re.search(r"\b(postavi|instaliraj|ukljuci|set ?up|install|enable)\s+(lokalni\s+|local\s+)?(ai|umjetnu inteligenciju|"
+                 r"model|ollam\w*)\b", t):
+        return AgentPlan("setup_ai", [], "builtin")
 
     m = re.match(r"^(?:molim te\s+|please\s+)?(?:deinstaliraj|uninstall|makni program|ukloni program|remove app)\s+(.+)$",
                  t)
@@ -124,6 +158,9 @@ Rules:
   on macOS), start apps, open a terminal, start installed Steam games (steam://rungameid/<appid>), close apps
   gracefully (CloseMainWindow / osascript quit) and manage files. Commands run without a console window, so start
   GUI programs with Start-Process (Windows) or open (macOS) so they appear on the user's screen.
+- You can ONLY act through "steps". Never say something is done, opened or installed unless you saw its output.
+  If the user asks for an action, return the commands for it in "steps".
+- Refuse destructive requests on system folders (Windows, Program Files, /System) with an empty "steps" list.
 - If the request needs nothing to run, return an empty "steps" list and answer in "reply".
 - When you receive command output, decide the next steps or finish with an empty "steps" list."""
 
@@ -156,6 +193,8 @@ def parse_agent_json(raw: str) -> tuple[str, list[CommandStep]]:
             continue
         if len(cmd) > MAX_COMMAND or "\x00" in cmd:
             raise ValidationError("command too long")
+        if any(ord(c) < 32 for c in cmd):
+            raise ValidationError("command contains control characters (bad backslash escaping)")
         out.append(CommandStep(cmd, expl.strip()[:300]))
     return reply.strip()[:2000], out
 

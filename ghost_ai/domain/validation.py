@@ -74,7 +74,8 @@ def _check_list(value: Any, field: str) -> list[str]:
         raise ValidationError(f"'{field}' must be a list")
     if len(value) > MAX_LIST:
         raise ValidationError(f"'{field}' has too many items")
-    return [_check_str(v, f"{field}[]", allow_empty=False, max_len=64) for v in value]
+    items = [v for v in value if not (isinstance(v, str) and not v.strip())]  # models emit "" items
+    return [_check_str(v, f"{field}[]", allow_empty=False, max_len=64) for v in items]
 
 
 def _check_keys(d: Any, allowed: set[str], required: set[str], where: str) -> dict[str, Any]:
@@ -105,6 +106,8 @@ def validate_template(template: str) -> str:
         raise ValidationError(f"Unknown placeholder(s): {', '.join(sorted(bad))}")
     if template.count("{") != template.count("}"):
         raise ValidationError("Unbalanced braces in rename_template")
+    if "{ext}" not in template:
+        raise ValidationError("rename_template must keep the file extension: include {ext}")
     return template
 
 

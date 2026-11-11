@@ -31,7 +31,38 @@ def build_context():
     return AppContext(service=service, store=store, config=config, data_dir=root, log_file=log_file)
 
 
+def selftest() -> int:  # noqa: C901
+    """`GHOST_SELFTEST=1 "GHOST AI.exe"` - checks the frozen build can load the built-in AI engine."""
+    import os
+    root = data_dir()
+    root.mkdir(parents=True, exist_ok=True)
+    setup_logging(root / "logs")
+    try:
+        import llama_cpp
+
+        info = llama_cpp.llama_print_system_info().decode()
+        log.info("selftest OK: llama_cpp %s | %s", llama_cpp.__version__, info)
+        mode = os.environ.get("GHOST_SELFTEST", "")
+        if mode.startswith("chat:"):  # e.g. GHOST_SELFTEST=chat:small - full inference with a downloaded model
+            from .ai.embedded import EmbeddedEngine
+            from .ai.natural import OllamaProvider, standard_folders
+
+            eng = EmbeddedEngine(root, mode.split(":", 1)[1])
+            res = OllamaProvider(model=eng.model_name, transport=eng.transport, timeout=600).propose(
+                "move all PDFs from Downloads to Documents", standard_folders())
+            log.info("selftest chat: %s", res.rule.to_dict() if res.rule else res.error)
+            # the engine answered (a valid rule, or an answer our validator rejected) = engine works
+            return 2 if res.error.startswith("ollama_unreachable") else 0
+        return 0
+    except Exception:
+        log.exception("selftest FAILED")
+        return 1
+
+
 def main(argv: list[str] | None = None) -> int:
+    import os
+    if os.environ.get("GHOST_SELFTEST"):
+        return selftest()
     from PySide6.QtCore import Qt
     from PySide6.QtWidgets import QApplication
 

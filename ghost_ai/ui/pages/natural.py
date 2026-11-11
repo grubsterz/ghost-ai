@@ -120,7 +120,7 @@ class NaturalPage(Page):
         card = Card()
         head = QHBoxLayout()
         head.addWidget(label(res.rule.name, "H2", wrap=False))
-        who = tr("nl.provider_ollama", model=self.ctx.setting("ai_model", "")) if res.provider == "ollama" \
+        who = tr("nl.provider_ollama", model=self.ctx.ai_label()) if res.provider == "ollama" \
             else tr("nl.provider_keywords")
         head.addWidget(pill(who))
         head.addStretch(1)

@@ -237,11 +237,11 @@ T: dict[str, tuple[str, str]] = {
     "agent.mode_ai": ("Local AI: {model} + built-in commands", "Lokalni AI: {model} + ugrađene naredbe"),
     "agent.mode_builtin": ("Built-in commands only (enable local AI in Settings for anything else)",
                            "Samo ugrađene naredbe (za sve ostalo uključi lokalni AI u Postavkama)"),
-    "agent.need_ai": ("Without a model I know these tasks: open <link/app/folder/terminal>, close <app>, "
+    "agent.need_ai": ("Press “Set up local AI” for anything. Without a model I know these tasks: open <link/app/folder/terminal>, close <app>, "
                       "launch game <name>, google/youtube <text>, lock/shut down computer, install / uninstall <app>, "
                       "update all, my repos, clone <repo>, create repo <name>, disk space, or '$ command'. Enable local AI in Settings for "
                       "anything else.",
-                      "Bez modela znam ove zadatke: otvori <link/program/mapu/terminal>, zatvori <program>, "
+                      "Za bilo što klikni „Postavi lokalni AI”. Bez modela znam ove zadatke: otvori <link/program/mapu/terminal>, zatvori <program>, "
                       "pokreni igru <ime>, pretraži/youtube <tekst>, zaključaj/ugasi računalo, "
                       "instaliraj / deinstaliraj <program>, ažuriraj sve, moji repoi, "
                       "kloniraj <repo>, napravi repo <ime>, koliko ima mjesta, ili '$ naredba'. Za sve ostalo uključi "
@@ -305,6 +305,46 @@ T: dict[str, tuple[str, str]] = {
     "desk.game": ("Start the Steam game “{name}”", "Pokreni Steam igru „{name}”"),
     "desk.close": ("Close {name} (asks it to close normally)", "Zatvori {name} (normalno, kao klik na X)"),
     "desk.open_app": ("Open {name}", "Otvori {name}"),
+    "agent.auto": ("Finish the task on its own", "Vodi zadatak do kraja"),
+    "agent.auto_tip": ("The local AI keeps going step by step. Commands with no risk flag run automatically; anything "
+                       "flagged (installs, closing apps, network, deleting…) still waits for your click.",
+                       "Lokalni AI sam nastavlja korak po korak. Naredbe bez oznake rizika pokreću se same; sve označeno "
+                       "(instalacije, zatvaranje programa, internet, brisanje…) i dalje čeka tvoj klik."),
+    "agent.auto_wait": ("Step {n} is flagged - it waits for your click.", "Korak {n} je označen - čeka tvoj klik."),
+    "agent.auto_limit": ("Stopped after 12 rounds - press Continue if you want more.",
+                         "Stao nakon 12 krugova - klikni Nastavi ako želiš još."),
+    "agent.ai_hint": ("For ANY request (not just the built-in ones) GHOST needs a free local AI model. "
+                      "It runs on this computer, offline.",
+                      "Za BILO KOJI zahtjev (ne samo ugrađene) GHOST treba besplatan lokalni AI model. "
+                      "Radi na ovom računalu, bez interneta."),
+    "agent.ai_setup": ("Set up local AI (free)", "Postavi lokalni AI (besplatno)"),
+    "agent.ai_ready": ("Local AI is ready - now you can ask for anything.", "Lokalni AI je spreman - sad možeš tražiti bilo što."),
+    "agentx.ai_reply": ("Setting up local AI: Ollama + model {model} (~5 GB download, once).",
+                        "Postavljam lokalni AI: Ollama + model {model} (~5 GB, skida se jednom)."),
+    "agentx.ai_install": ("Install Ollama (local AI engine)", "Instaliraj Ollamu (pokretač lokalnog AI-ja)"),
+    "agentx.ai_start": ("Start Ollama if it isn't running", "Pokreni Ollamu ako ne radi"),
+    "agentx.ai_pull": ("Download the model {model} (takes a few minutes)", "Skini model {model} (traje par minuta)"),
+    "ai.setup_title": ("Set up the built-in AI", "Postavi ugrađeni AI"),
+    "ai.setup_text": ("GHOST runs the AI inside the app - no other programs to install. It only needs to download "
+                      "the AI model (a data file) once. After that it works offline on this computer.",
+                      "GHOST pokreće AI unutar same aplikacije - ne treba instalirati nikakve druge programe. Treba samo "
+                      "jednom skinuti AI model (podatkovnu datoteku). Nakon toga radi bez interneta, na ovom računalu."),
+    "ai.recommended": ("recommended", "preporučeno"),
+    "ai.your_ram": ("This computer has {ram} GB RAM.", "Ovo računalo ima {ram} GB RAM-a."),
+    "ai.downloaded": ("downloaded", "preuzet"),
+    "ai.privacy": ("Downloaded once from huggingface.co (official Qwen model files). Nothing about you is sent.",
+                   "Skida se jednom s huggingface.co (službene Qwen datoteke modela). Ništa o tebi se ne šalje."),
+    "ai.download": ("Download and turn on", "Preuzmi i uključi"),
+    "ai.failed": ("Download failed: {e} - press the button again to resume.",
+                  "Preuzimanje nije uspjelo: {e} - klikni ponovno za nastavak."),
+    "ai.no_engine": ("The built-in AI engine is missing from this build (llama-cpp-python).",
+                     "U ovoj verziji nedostaje ugrađeni AI pokretač (llama-cpp-python)."),
+    "ai.ready_model": ("Built-in AI ready: {model}", "Ugrađeni AI spreman: {model}"),
+    "ai.not_downloaded": ("Built-in AI: model not downloaded yet.", "Ugrađeni AI: model još nije preuzet."),
+    "ai.change": ("Change model…", "Promijeni model…"),
+    "set.engine": ("AI engine", "AI pokretač"),
+    "set.engine_builtin": ("Built-in (recommended, nothing to install)", "Ugrađeni (preporučeno, ništa se ne instalira)"),
+    "set.engine_ollama": ("Ollama (advanced, separate app)", "Ollama (napredno, zasebna aplikacija)"),
     "set.full_access": ("Full access (commands)", "Puni pristup (naredbe)"),
     "set.full_on": ("On - commands run only after your click.", "Uključen - naredbe se pokreću tek na tvoj klik."),
     "set.full_off": ("Off - GHOST only organizes files in allowed folders.",
@@ -315,7 +355,7 @@ T: dict[str, tuple[str, str]] = {
     "theme.dark": ("Dark", "Tamna"), "theme.light": ("Light", "Svijetla"),
     "set.scale": ("Text size", "Veličina teksta"),
     "set.ai": ("Local AI (optional)", "Lokalni AI (opcionalno)"),
-    "set.ai_enable": ("Use a local Ollama model for understanding requests", "Koristi lokalni Ollama model za razumijevanje zahtjeva"),
+    "set.ai_enable": ("Use local AI to understand free-form requests", "Koristi lokalni AI za razumijevanje slobodnih zahtjeva"),
     "set.ai_model": ("Model", "Model"), "set.ai_test": ("Test connection", "Provjeri vezu"),
     "set.ai_help": ("Install Ollama from ollama.com, then run: ollama pull llama3.2:3b",
                     "Instaliraj Ollamu s ollama.com, pa pokreni: ollama pull llama3.2:3b"),

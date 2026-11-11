@@ -157,3 +157,63 @@ def test_agent_page_blocked_when_paused(qapp, ctx):
         page.run_step(0)
     assert page.steps[0].status == "pending"
     ctx.service.set_paused(False)
+
+
+def _wait(qapp, cond, timeout=40):
+    import time
+    end = time.time() + timeout
+    while not cond() and time.time() < end:
+        qapp.processEvents()
+        time.sleep(0.05)
+    qapp.processEvents()
+    return cond()
+
+
+def test_auto_mode_runs_safe_steps_and_waits_on_risky(qapp, ctx):
+    import json
+    import sys
+
+    from ghost_ai.agent.planner import OllamaAgent
+    from ghost_ai.ui.pages.agent import AgentPage
+
+    echo = "Write-Output" if sys.platform == "win32" else "echo"
+    replies = [
+        {"reply": "step 1", "steps": [{"explanation": "safe", "command": f"{echo} auto-one"}]},
+        {"reply": "step 2", "steps": [{"explanation": "safe", "command": f"{echo} auto-two"},
+                                      {"explanation": "risky", "command": "winget install foo"}]},
+        {"reply": "finished", "steps": []},
+    ]
+
+    def transport(url, payload, timeout):
+        return {"message": {"content": json.dumps(replies.pop(0))}}
+
+    ctx.set_setting("full_access", True)
+    page = AgentPage(ctx)
+    page.auto_cb.setChecked(True)
+    page.agent = OllamaAgent(transport=transport)
+    page.input.setText("do something free-form")
+    page.sig.plan.emit(page.agent.ask("x", {}))  # what propose() does in a thread
+    assert _wait(qapp, lambda: len(page.steps) == 2 and page.steps[0].status == "done" and not page.running)
+    assert "auto-one" in page.console.toPlainText() and "auto-two" in page.console.toPlainText()
+    assert page.steps[1].status == "pending", "risky step must wait for a click"
+    page._skip(page.steps[1])
+    page._advance()
+    assert _wait(qapp, lambda: page.reply.text() == "finished")
+
+
+def test_setup_ai_applies_settings_only_after_success(qapp, ctx):
+    import sys
+
+    from ghost_ai.agent.commands import CommandStep
+    from ghost_ai.agent.planner import AgentPlan
+    from ghost_ai.ui.pages.agent import AgentPage
+
+    echo = "Write-Output" if sys.platform == "win32" else "echo"
+    ctx.set_setting("full_access", True)
+    page = AgentPage(ctx)
+    page._show_plan(AgentPlan("", [CommandStep(f"{echo} ok")], "builtin",
+                              on_success={"ai_enabled": True, "ai_model": "test-model"}))
+    assert ctx.setting("ai_enabled", False) is False
+    page.run_step(0)
+    assert _wait(qapp, lambda: ctx.setting("ai_model") == "test-model")
+    assert ctx.setting("ai_enabled") is True

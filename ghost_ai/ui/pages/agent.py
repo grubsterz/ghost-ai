@@ -8,11 +8,11 @@ import threading
 from PySide6.QtCore import QObject, Qt, Signal
 from PySide6.QtGui import QFontDatabase
 from PySide6.QtWidgets import (
-    QGridLayout, QHBoxLayout, QInputDialog, QLineEdit, QListWidget, QMessageBox, QPlainTextEdit, QVBoxLayout,
+    QCheckBox, QGridLayout, QHBoxLayout, QInputDialog, QLineEdit, QListWidget, QMessageBox, QPlainTextEdit, QVBoxLayout,
 )
 
 from ...agent.commands import CommandRunner, CommandStep, assess, github_login, open_terminal_with, tool_status
-from ...agent.planner import AgentPlan, OllamaAgent, builtin_plan
+from ...agent.planner import AgentPlan, builtin_plan
 from ...i18n import language, tr
 from ..widgets import Card, Page, button, clear_layout, label, pill
 
@@ -42,6 +42,8 @@ class AgentPage(Page):
         self.runner = CommandRunner()
         self.running = False
         self.run_all = False
+        self.on_success: dict | None = None
+        self.rounds = 0
         self.agent: OllamaAgent | None = None
         self.sig = _Sig()
         self.sig.line.connect(self._append)
@@ -83,10 +85,19 @@ class AgentPage(Page):
         self.go = button(tr("agent.propose"), "Primary", self.propose)
         rrow.addWidget(self.go)
         rrow.addWidget(button(tr("agent.new"), slot=self.reset))
+        self.auto_cb = QCheckBox(tr("agent.auto"))
+        self.auto_cb.setToolTip(tr("agent.auto_tip"))
+        rrow.addWidget(self.auto_cb)
         rrow.addStretch(1)
         self.mode = label("", "Muted", wrap=False)
         rrow.addWidget(self.mode)
         self.req_card.lay.addLayout(rrow)
+        self.ai_row = QHBoxLayout()
+        self.ai_hint = label(tr("agent.ai_hint"), "Muted")
+        self.ai_row.addWidget(self.ai_hint, 1)
+        self.ai_btn = button(tr("agent.ai_setup"), "Primary", self.setup_ai)
+        self.ai_row.addWidget(self.ai_btn)
+        self.req_card.lay.addLayout(self.ai_row)
         ex = QGridLayout()
         ex.setSpacing(2)
         for i, e in enumerate(EXAMPLES[language()]):
@@ -152,8 +163,18 @@ class AgentPage(Page):
             self.gh_btn.show()
 
     # ---- planning ---------------------------------------------------------
+    def setup_ai(self) -> None:
+        if self.running:
+            return
+        from ..ai_setup import AiSetupDialog
+        if AiSetupDialog(self.ctx, self.window()).exec():
+            self.reply.setText(tr("agent.ai_ready"))
+        self.refresh()
+
     def reset(self) -> None:
         self.steps = []
+        self.on_success = None
+        self.rounds = 0
         self.agent = None
         self.reply.setText("")
         self.console.clear()
@@ -164,7 +185,11 @@ class AgentPage(Page):
         if not text or self.running:
             return
         self.request = text
+        self.rounds = 0
         plan = builtin_plan(text)
+        if plan is not None and plan.reply == "setup_ai":
+            self.setup_ai()
+            return
         if plan is not None and plan.reply == "github_login":
             open_terminal_with("gh auth login --web")
             self.reply.setText(tr("agent.gh_opened"))
@@ -173,12 +198,11 @@ class AgentPage(Page):
             self.agent = None
             self._show_plan(plan)
             return
-        provider = self.ctx.ollama()
-        if provider is None:
+        if self.agent is None:
+            self.agent = self.ctx.make_agent()
+        if self.agent is None:
             self.reply.setText(tr("agent.need_ai"))
             return
-        if self.agent is None:
-            self.agent = OllamaAgent(self.ctx.config.ollama_url, self.ctx.setting("ai_model", "llama3.2:3b"))
         self.go.setEnabled(False)
         self.reply.setText(tr("nl.thinking"))
         agent = self.agent
@@ -206,7 +230,9 @@ class AgentPage(Page):
             msg = (msg + "\n" if msg else "") + tr("agent.review")
         self.reply.setText(msg)
         self.steps = plan.steps
+        self.on_success = plan.on_success
         self._render()
+        self._advance()
 
     # ---- rendering --------------------------------------------------------
     def _render(self) -> None:
@@ -292,14 +318,38 @@ class AgentPage(Page):
 
     def start_run_all(self) -> None:
         self.run_all = True
-        self._next()
+        self._advance()
 
-    def _next(self) -> None:
-        nxt = next((i for i, s in enumerate(self.steps) if s.status == "pending"), None)
-        if nxt is None:
-            self.run_all = False
+    def _advance(self) -> None:
+        """Decide what happens next: run the next step (only if allowed), continue with the AI, or wait."""
+        if self.running:
             return
-        self.run_step(nxt)
+        pending = [i for i, s in enumerate(self.steps) if s.status == "pending"]
+        if pending:
+            nxt = pending[0]
+            if self.run_all:
+                self.run_step(nxt)
+            elif self.auto_cb.isChecked() and not assess(self.steps[nxt].command):
+                self.run_step(nxt)  # auto mode runs only commands with no risk flag at all
+            elif self.auto_cb.isChecked():
+                self.reply.setText(tr("agent.auto_wait", n=nxt + 1))
+            return
+        self.run_all = False
+        if self.on_success and self.steps and all(s.status == "done" for s in self.steps):
+            for k, v in self.on_success.items():
+                self.ctx.set_setting(k, v)
+            self.on_success = None
+            self.reply.setText(tr("agent.ai_ready"))
+            self.ctx.bus.changed.emit()
+            self.refresh()
+            return
+        ran = any(s.status != "pending" for s in self.steps)
+        if self.auto_cb.isChecked() and self.agent is not None and ran:
+            if self.rounds >= 12:
+                self.reply.setText(tr("agent.auto_limit"))
+                return
+            self.rounds += 1
+            self.continue_ai()
 
     def _append(self, line: str) -> None:
         self.console.insertPlainText(line) if line.endswith("\n") else self.console.appendPlainText(line)
@@ -311,14 +361,18 @@ class AgentPage(Page):
         self.ctx.store.add_command(step.command, step.status, step.exit_code, step.output, self.request)
         self._render()
         self.refresh_history()
-        if self.run_all and step.status == "done":
-            self._next()
-        else:
+        if step.status != "done":
             self.run_all = False
+        if step.status == "stopped":
+            self.auto_cb.setChecked(False)
             self._sync()
+            return
+        self._advance()
+        self._sync()
 
     def stop(self) -> None:
         self.run_all = False
+        self.auto_cb.setChecked(False)
         self.runner.stop()
 
     # ---- refresh ----------------------------------------------------------
@@ -333,8 +387,11 @@ class AgentPage(Page):
         self.locked.setVisible(not on)
         for w in (self.status_card, self.req_card, self.console, self.history, self.hist_title, self.reply):
             w.setVisible(on)
-        self.mode.setText(tr("agent.mode_ai", model=self.ctx.setting("ai_model", "")) if self.ctx.ollama()
+        has_ai = self.ctx.ollama() is not None
+        self.mode.setText(tr("agent.mode_ai", model=self.ctx.ai_label()) if has_ai
                           else tr("agent.mode_builtin"))
+        self.ai_hint.setVisible(on and not has_ai)
+        self.ai_btn.setVisible(on and not has_ai)
         self.refresh_history()
         self._sync()
         if not on:

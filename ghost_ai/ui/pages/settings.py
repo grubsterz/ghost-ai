@@ -4,7 +4,9 @@ import json
 from datetime import datetime
 
 from PySide6.QtCore import QObject, QRunnable, QThreadPool, Signal
-from PySide6.QtWidgets import QCheckBox, QComboBox, QFileDialog, QFormLayout, QHBoxLayout, QLineEdit, QMessageBox
+from PySide6.QtWidgets import (
+    QCheckBox, QComboBox, QFileDialog, QFormLayout, QHBoxLayout, QLineEdit, QMessageBox, QWidget,
+)
 
 from ... import __version__
 from ...ai.natural import OllamaProvider
@@ -62,6 +64,23 @@ class SettingsPage(Page):
         self.ai_on.setChecked(bool(ctx.setting("ai_enabled", False)))
         self.ai_on.toggled.connect(lambda v: (ctx.set_setting("ai_enabled", v), ctx.bus.changed.emit()))
         ai.lay.addWidget(self.ai_on)
+        erow = QHBoxLayout()
+        self.engine = QComboBox()
+        self.engine.addItem(tr("set.engine_builtin"), "builtin")
+        self.engine.addItem(tr("set.engine_ollama"), "ollama")
+        self.engine.setCurrentIndex(0 if ctx.setting("ai_engine", "builtin") == "builtin" else 1)
+        self.engine.currentIndexChanged.connect(self._engine)
+        erow.addWidget(label(tr("set.engine"), wrap=False))
+        erow.addWidget(self.engine, 1)
+        ai.lay.addLayout(erow)
+        brow = QHBoxLayout()
+        self.builtin_status = label("", "Muted")
+        brow.addWidget(self.builtin_status, 1)
+        self.builtin_btn = button(tr("agent.ai_setup"), "Primary", self._setup_builtin)
+        brow.addWidget(self.builtin_btn)
+        self.builtin_row = QWidget()
+        self.builtin_row.setLayout(brow)
+        ai.lay.addWidget(self.builtin_row)
         arow = QHBoxLayout()
         self.model = QComboBox()
         self.model.setEditable(True)
@@ -70,10 +89,13 @@ class SettingsPage(Page):
         arow.addWidget(label(tr("set.ai_model"), wrap=False))
         arow.addWidget(self.model, 1)
         arow.addWidget(button(tr("set.ai_test"), slot=self._test))
-        ai.lay.addLayout(arow)
+        self.ollama_row = QWidget()
+        self.ollama_row.setLayout(arow)
+        ai.lay.addWidget(self.ollama_row)
         self.ai_status = label("", "Muted")
         ai.lay.addWidget(self.ai_status)
-        ai.lay.addWidget(label(tr("set.ai_help"), "Muted"))
+        self.ollama_help = label(tr("set.ai_help"), "Muted")
+        ai.lay.addWidget(self.ollama_help)
         self.body.addWidget(ai)
 
         full = Card()
@@ -128,7 +150,34 @@ class SettingsPage(Page):
         self._sig.done.connect(self._tested)
         self.refresh()
 
+    def _engine(self) -> None:
+        self.ctx.set_setting("ai_engine", self.engine.currentData())
+        self.ctx.bus.changed.emit()
+        self.refresh()
+
+    def _setup_builtin(self) -> None:
+        from ..ai_setup import AiSetupDialog
+        if AiSetupDialog(self.ctx, self.window()).exec():
+            self.ai_on.setChecked(True)
+        self.refresh()
+
     def refresh(self) -> None:
+        from ...ai.embedded import MODELS, describe, engine_available
+        from ...i18n import language
+        builtin = self.ctx.setting("ai_engine", "builtin") == "builtin"
+        self.builtin_row.setVisible(builtin)
+        self.ollama_row.setVisible(not builtin)
+        self.ollama_help.setVisible(not builtin)
+        self.ai_status.setVisible(not builtin)
+        eng = self.ctx.engine()
+        key = self.ctx.setting("builtin_model", "smart")
+        if not engine_available():
+            self.builtin_status.setText(tr("ai.no_engine"))
+        elif eng is not None:
+            self.builtin_status.setText(tr("ai.ready_model", model=describe(key, language())))
+        else:
+            self.builtin_status.setText(tr("ai.not_downloaded"))
+        self.builtin_btn.setText(tr("ai.change") if eng is not None else tr("agent.ai_setup"))
         on = bool(self.ctx.setting("full_access", False))
         self.full_label.setText(tr("set.full_on") if on else tr("set.full_off"))
         self.full_btn.setText(tr("agent.disable") if on else tr("agent.enable"))

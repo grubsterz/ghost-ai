@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ghost-ai"
-version = "0.3.0"
+version = "0.4.0"
 description = "Free, private, offline-first desktop assistant that automates file chores you describe or demonstrate."
 readme = "README.md"
 requires-python = ">=3.12"
@@ -17,6 +17,9 @@ dependencies = [
 
 [project.optional-dependencies]
 voice = ["faster-whisper>=1.0", "sounddevice>=0.4", "numpy>=1.26"]
+# Built-in local AI. Prebuilt wheels: --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cpu
+# (macOS Apple Silicon: .../whl/metal). The release builds always include it.
+ai = ["llama-cpp-python>=0.3.16"]
 dev = ["pytest>=8", "pyinstaller>=6.6"]
 
 [project.scripts]

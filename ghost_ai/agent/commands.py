@@ -75,7 +75,9 @@ def needs_typed_confirmation(command: str) -> bool:
 
 
 def shell_name() -> str:
-    return "PowerShell" if sys.platform == "win32" else os.path.basename(os.environ.get("SHELL", "/bin/zsh"))
+    if sys.platform == "win32":
+        return "PowerShell 7" if shutil.which("pwsh") else "Windows PowerShell 5.1 (use ';' between commands, not '&&')"
+    return os.path.basename(os.environ.get("SHELL", "/bin/zsh"))
 
 
 def shell_argv(command: str) -> list[str]:

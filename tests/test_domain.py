@@ -67,6 +67,7 @@ def test_validation_accepts_valid():
     (lambda d: d["action"].update(target_dir="C:/x; del *"), "forbidden"),
     (lambda d: d["action"].update(rename_template="{stem}{evil}{ext}"), "placeholder"),
     (lambda d: d["action"].update(rename_template="../../{stem}"), "paths"),
+    (lambda d: d["action"].update(rename_template="{stem}pdf"), "extension"),
     (lambda d: d["conditions"].update(extensions=["p df"]), "extension"),
     (lambda d: d["conditions"].update(extensions=[]), "condition"),
     (lambda d: d["action"].update(target_dir=""), "target"),
